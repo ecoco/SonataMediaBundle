@@ -21,12 +21,11 @@ use Sonata\MediaBundle\Twig\TokenParser\PathTokenParser;
 use Sonata\MediaBundle\Twig\TokenParser\ThumbnailTokenParser;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
-use Twig\Extension\InitRuntimeInterface;
 
 /**
  * @final since sonata-project/media-bundle 3.21.0
  */
-class MediaExtension extends AbstractExtension implements InitRuntimeInterface
+class MediaExtension extends AbstractExtension
 {
     /**
      * @var Pool
@@ -48,10 +47,11 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
      */
     protected $environment;
 
-    public function __construct(Pool $mediaService, ManagerInterface $mediaManager)
+    public function __construct(Pool $mediaService, ManagerInterface $mediaManager, Environment $environment)
     {
         $this->mediaService = $mediaService;
         $this->mediaManager = $mediaManager;
+        $this->environment  = $environment;
     }
 
     public function getTokenParsers()
@@ -92,8 +92,8 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
         $options = $provider->getHelperProperties($media, $format, $options);
 
         return $this->render($provider->getTemplate('helper_view'), [
-            'media' => $media,
-            'format' => $format,
+            'media'   => $media,
+            'format'  => $format,
             'options' => $options,
         ]);
     }
@@ -116,15 +116,15 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
         }
 
         $provider = $this->getMediaService()
-           ->getProvider($media->getProviderName());
+            ->getProvider($media->getProviderName());
 
-        $format = $provider->getFormatName($media, $format);
+        $format            = $provider->getFormatName($media, $format);
         $format_definition = $provider->getFormat($format);
 
         // build option
         $defaultOptions = [
             'title' => $media->getName(),
-            'alt' => $media->getName(),
+            'alt'   => $media->getName(),
         ];
 
         if (\is_array($format_definition) && $format_definition['width']) {
@@ -139,7 +139,7 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
         $options['src'] = $provider->generatePublicUrl($media, $format);
 
         return $this->render($provider->getTemplate('helper_thumbnail'), [
-            'media' => $media,
+            'media'   => $media,
             'options' => $options,
         ]);
     }
@@ -151,11 +151,7 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
      */
     public function render($template, array $parameters = [])
     {
-        if (!isset($this->resources[$template])) {
-            $this->resources[$template] = $this->environment->loadTemplate($template);
-        }
-
-        return $this->resources[$template]->render($parameters);
+        return $this->environment->render($template, $parameters);
     }
 
     /**
@@ -173,7 +169,7 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
         }
 
         $provider = $this->getMediaService()
-           ->getProvider($media->getProviderName());
+            ->getProvider($media->getProviderName());
 
         $format = $provider->getFormatName($media, $format);
 
@@ -193,7 +189,7 @@ class MediaExtension extends AbstractExtension implements InitRuntimeInterface
      */
     private function getMedia($media): ?MediaInterface
     {
-        if (!$media instanceof MediaInterface && \strlen((string) $media) > 0) {
+        if (!$media instanceof MediaInterface && \strlen((string)$media) > 0) {
             $media = $this->mediaManager->findOneBy([
                 'id' => $media,
             ]);
